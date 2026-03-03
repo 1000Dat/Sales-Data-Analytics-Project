@@ -1,19 +1,19 @@
+select*from [dbo].[fact_sales] ;
+
 USE IndustrialSalesDB;
 GO
 
-IF OBJECT_ID('monthly_revenue', 'U') IS NOT NULL
 DROP TABLE monthly_revenue;
-GO
 
+---update data type  date 
 SELECT 
-    FORMAT(order_date,'yyyy-MM') AS month,
-    SUM(revenue) AS total_revenue,
-    SUM(profit) AS total_profit,
-    SUM(quantity) AS total_quantity
+    DATEFROMPARTS(YEAR(o.order_date), MONTH(o.order_date), 1) AS month,
+    SUM(od.quantity * p.price) AS total_revenue,
+    SUM(od.quantity * (p.price - p.cost)) AS total_profit,
+    SUM(od.quantity) AS total_quantity
 INTO monthly_revenue
-FROM fact_sales
-GROUP BY FORMAT(order_date,'yyyy-MM');
-GO
-
---test
-SELECT * FROM monthly_revenue ORDER BY month;
+FROM orders o
+JOIN order_details od ON o.order_id = od.order_id
+JOIN products p ON od.product_id = p.product_id
+GROUP BY DATEFROMPARTS(YEAR(o.order_date), MONTH(o.order_date), 1)
+ORDER BY month;
